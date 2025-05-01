@@ -117,281 +117,6 @@ int bookCount = 0;
 int userCount = 0;
 int borrowCount = 0;
 
-/********************************************/
-/* File I/O Functions                       */
-/********************************************/
-
-// Save all data to file
-void saveAllData() {
-    FILE* file = fopen(SAVE_FILE, "wb");
-    if (file == NULL) {
-        printf("Error opening file for writing!\n");
-        return;
-    }
-    
-    // Save counters
-    fwrite(&bookCount, sizeof(int), 1, file);
-    fwrite(&userCount, sizeof(int), 1, file);
-    fwrite(&borrowCount, sizeof(int), 1, file);
-    
-    // Save books (using preorder traversal)
-    void saveBooks(Book* root, FILE* file) {
-        if (root == NULL) {
-            // Write a sentinel value to indicate NULL
-            int sentinel = -1;
-            fwrite(&sentinel, sizeof(int), 1, file);
-            return;
-        }
-        
-        // Write book data
-        fwrite(&root->id, sizeof(int), 1, file);
-        fwrite(root->title, sizeof(char), MAX_TITLE_LENGTH, file);
-        fwrite(root->author, sizeof(char), MAX_AUTHOR_LENGTH, file);
-        fwrite(root->isbn, sizeof(char), MAX_ISBN_LENGTH, file);
-        fwrite(&root->status, sizeof(BookStatus), 1, file);
-        
-        // Recursively save left and right subtrees
-        saveBooks(root->left, file);
-        saveBooks(root->right, file);
-    }
-    
-    saveBooks(bookRoot, file);
-    
-    // Save users (linked list)
-    User* currentUser = userList;
-    while (currentUser != NULL) {
-        fwrite(&currentUser->id, sizeof(int), 1, file);
-        fwrite(currentUser->name, sizeof(char), MAX_NAME_LENGTH, file);
-        fwrite(currentUser->user_id, sizeof(char), MAX_ID_LENGTH, file);
-        fwrite(&currentUser->age, sizeof(int), 1, file);
-        fwrite(&currentUser->gender, sizeof(char), 1, file);
-        fwrite(&currentUser->status, sizeof(UserStatus), 1, file);
-        
-        currentUser = currentUser->next;
-    }
-    
-    // Write sentinel to mark end of users
-    int sentinel = -1;
-    fwrite(&sentinel, sizeof(int), 1, file);
-    
-    // Save borrow records
-    BorrowRecord* currentRecord = borrowRecords;
-    while (currentRecord != NULL) {
-        fwrite(&currentRecord->userId, sizeof(int), 1, file);
-        fwrite(&currentRecord->bookId, sizeof(int), 1, file);
-        fwrite(&currentRecord->borrowDate, sizeof(time_t), 1, file);
-        fwrite(&currentRecord->dueDate, sizeof(time_t), 1, file);
-        fwrite(&currentRecord->returned, sizeof(bool), 1, file);
-        fwrite(&currentRecord->returnDate, sizeof(time_t), 1, file);
-        
-        currentRecord = currentRecord->next;
-    }
-    
-    // Write sentinel to mark end of borrow records
-    fwrite(&sentinel, sizeof(int), 1, file);
-    
-    // Save book queues
-    for (int i = 0; i < MAX_BOOKS; i++) {
-        // Save queue size
-        fwrite(&bookQueues[i].size, sizeof(int), 1, file);
-        
-        if (bookQueues[i].size > 0) {
-            QueueNode* currentNode = bookQueues[i].front;
-            while (currentNode != NULL) {
-                fwrite(&currentNode->userId, sizeof(int), 1, file);
-                fwrite(&currentNode->bookId, sizeof(int), 1, file);
-                
-                currentNode = currentNode->next;
-            }
-        }
-    }
-    
-    // Save browsing history stack
-    fwrite(&browsingHistory.size, sizeof(int), 1, file);
-    
-    if (browsingHistory.size > 0) {
-        StackNode* currentNode = browsingHistory.top;
-        while (currentNode != NULL) {
-            fwrite(&currentNode->bookId, sizeof(int), 1, file);
-            
-            currentNode = currentNode->next;
-        }
-    }
-    
-    // Save library structure (using recursive function)
-    void saveSection(Section* section, FILE* file) {
-        if (section == NULL) {
-            // Write a sentinel value to indicate NULL
-            int sentinel = -1;
-            fwrite(&sentinel, sizeof(int), 1, file);
-            return;
-        }
-        
-        // Write section name
-        fwrite(section->name, sizeof(char), MAX_TITLE_LENGTH, file);
-        
-        // Save children (recursively)
-        saveSection(section->firstChild, file);
-        
-        // Save siblings (recursively)
-        saveSection(section->nextSibling, file);
-    }
-    
-    saveSection(libraryRoot, file);
-    
-    fclose(file);
-    printf("Data saved successfully!\n");
-}
-
-// Load all data from file
-void loadAllData() {
-    FILE* file = fopen(SAVE_FILE, "rb");
-    if (file == NULL) {
-        printf("Save file not found or cannot be opened!\n");
-        return;
-    }
-    
-    // Clear existing data
-    // (Free memory of existing structures would be ideal but skipped for brevity)
-    bookRoot = NULL;
-    userList = NULL;
-    borrowRecords = NULL;
-    libraryRoot = NULL;
-    
-    for (int i = 0; i < MAX_BOOKS; i++) {
-        bookQueues[i].front = NULL;
-        bookQueues[i].rear = NULL;
-        bookQueues[i].size = 0;
-    }
-    
-    browsingHistory.top = NULL;
-    browsingHistory.size = 0;
-    
-    // Load counters
-    fread(&bookCount, sizeof(int), 1, file);
-    fread(&userCount, sizeof(int), 1, file);
-    fread(&borrowCount, sizeof(int), 1, file);
-    
-    // Load books
-    Book* loadBooks(FILE* file) {
-        int id;
-        fread(&id, sizeof(int), 1, file);
-        
-        if (id == -1) {
-            return NULL;  // Sentinel value indicating NULL
-        }
-        
-        Book* newBook = (Book*)malloc(sizeof(Book));
-        if (newBook == NULL) {
-            printf("Memory allocation failed!\n");
-            return NULL;
-        }
-        
-        newBook->id = id;
-        fread(newBook->title, sizeof(char), MAX_TITLE_LENGTH, file);
-        fread(newBook->author, sizeof(char), MAX_AUTHOR_LENGTH, file);
-        fread(newBook->isbn, sizeof(char), MAX_ISBN_LENGTH, file);
-        fread(&newBook->status, sizeof(BookStatus), 1, file);
-        
-        // Load left and right subtrees
-        newBook->left = loadBooks(file);
-        newBook->right = loadBooks(file);
-        
-        return newBook;
-    }
-    
-    bookRoot = loadBooks(file);
-    
-    // Load users
-    while (1) {
-        int id;
-        fread(&id, sizeof(int), 1, file);
-        
-        if (id == -1) {
-            break;  // Sentinel value indicating end of users
-        }
-        
-        User* newUser = (User*)malloc(sizeof(User));
-        if (newUser == NULL) {
-            printf("Memory allocation failed!\n");
-            return;
-        }
-        
-        newUser->id = id;
-        fread(newUser->name, sizeof(char), MAX_NAME_LENGTH, file);
-        fread(newUser->user_id, sizeof(char), MAX_ID_LENGTH, file);
-        fread(&newUser->age, sizeof(int), 1, file);
-        fread(&newUser->gender, sizeof(char), 1, file);
-        fread(&newUser->status, sizeof(UserStatus), 1, file);
-        newUser->next = NULL;
-        
-        // Add to list
-        if (userList == NULL) {
-            userList = newUser;
-        } else {
-            User* current = userList;
-            while (current->next != NULL) {
-                current = current->next;
-            }
-            current->next = newUser;
-        }
-    }
-    
-    // Load borrow records
-    while (1) {
-        int userId;
-        fread(&userId, sizeof(int), 1, file);
-        
-        if (userId == -1) {
-            break;  // Sentinel value indicating end of records
-        }
-        
-        BorrowRecord* newRecord = (BorrowRecord*)malloc(sizeof(BorrowRecord));
-        if (newRecord == NULL) {
-            printf("Memory allocation failed!\n");
-            return;
-        }
-        
-        newRecord->userId = userId;
-        fread(&newRecord->bookId, sizeof(int), 1, file);
-        fread(&newRecord->borrowDate, sizeof(time_t), 1, file);
-        fread(&newRecord->dueDate, sizeof(time_t), 1, file);
-        fread(&newRecord->returned, sizeof(bool), 1, file);
-        fread(&newRecord->returnDate, sizeof(time_t), 1, file);
-        newRecord->next = NULL;
-        
-        // Add to list
-        if (borrowRecords == NULL) {
-            borrowRecords = newRecord;
-        } else {
-            BorrowRecord* current = borrowRecords;
-            while (current->next != NULL) {
-                current = current->next;
-            }
-            current->next = newRecord;
-        }
-    }
-    
-    // Load book queues
-    for (int i = 0; i < MAX_BOOKS; i++) {
-        int queueSize;
-        fread(&queueSize, sizeof(int), 1, file);
-        
-        for (int j = 0; j < queueSize; j++) {
-            QueueNode* newNode = (QueueNode*)malloc(sizeof(QueueNode));
-            if (newNode == NULL) {
-                printf("Memory allocation failed!\n");
-                return;
-            }
-            
-            fread(&newNode->userId, sizeof(int), 1, file);
-            fread(&newNode->bookId, sizeof(int), 1, file);
-            newNode->next = NULL;
-            
-            // Add to queue
-            if (bookQueues[i].rear == NULL) {
-                bookQueues[i].front = newNode
-
 // Create a new book
 Book* createBook(int id, const char* title, const char* author, const char* isbn) {
     Book* newBook = (Book*)malloc(sizeof(Book));
@@ -1954,4 +1679,60 @@ void addSection() {
         printf("Parent section not found!\n");
         free(newSection);
     }
+}
+
+void main(){
+bool flag = true  ;
+int choice;
+while(flag){
+ printf("=== Library Management System === \n ");
+printf("1. Manage Books \n");
+printf("2. Manage Users/Students\n");
+printf("3. Manage Borrow Book (Reserve , Cancel Reservation, Check Book Availability,\n");
+printf("Return, Borrowing Queue, Undo Last Return, etc)\n");
+printf("4. Browse Library Sections\n");
+printf("5. Search (Catalog, Student by ID/Name, Book by ID/Title\n");
+printf("6. View Browsing History\n");
+printf("7. Trees (Display Student Directory, Display Library Catalog, Library Structure, etc)\n");
+printf("8. Save Data to File\n");
+printf("9. Load Data from File\n");
+printf("10. Exit ");
+switch (choice)
+{
+case 1:
+    
+    break;
+case 2:
+    
+    break;
+case 3:
+    
+    break;
+case 4:
+    
+    break;
+case 5:
+    
+    break;
+case 6:
+    
+    break;
+case 7:
+    
+    break;
+case 8:
+    
+    break;
+case 9:
+    
+    break;
+case 10:
+    flag = false ;
+    break;
+default:
+printf("please select a valid choice ");
+    break;
+}
+}
+
 }
