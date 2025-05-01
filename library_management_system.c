@@ -1,7 +1,3 @@
-/**
- * Library Management System
- * Built with modular architecture following the requirements in the project specification
- */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,9 +113,14 @@ int bookCount = 0;
 int userCount = 0;
 int borrowCount = 0;
 
+/********************************************/
+/* BOOK MANAGMENT set of Functions          */
+/********************************************/
+
 // Create a new book
-Book* createBook(int id, const char* title, const char* author, const char* isbn) {
+Book* addBook(int id, const char* title, const char* author, const char* isbn) {
     Book* newBook = (Book*)malloc(sizeof(Book));
+    
     if (newBook == NULL) {
         printf("Memory allocation failed!\n");
         return NULL;
@@ -180,7 +181,7 @@ Book* searchBookByTitle(Book* root, const char* title, Book* result) {
     }
     
     if (strstr(root->title, title) != NULL) {
-        printf("Found: %d - %s by %s\n", root->id, root->title, root->author);
+        printf("Found:%s by %s (ID = %d) \n", root->id, root->title, root->author);
         result = root;
     }
     
@@ -245,6 +246,7 @@ Book* deleteBook(Book* root, int id) {
 // Function to display a book's details
 void displayBook(Book* book) {
     if (book != NULL) {
+        printf("---------------------------\n");
         printf("ID: %d\n", book->id);
         printf("Title: %s\n", book->title);
         printf("Author: %s\n", book->author);
@@ -276,13 +278,12 @@ void displayAllBooks(Book* root) {
 }
 
 // Add a new book via user input
-void addBook() {
+void inBookinfo() {
     char title[MAX_TITLE_LENGTH];
     char author[MAX_AUTHOR_LENGTH];
     char isbn[MAX_ISBN_LENGTH];
     
     printf("Enter book title: ");
-    fflush(stdin);
     fgets(title, MAX_TITLE_LENGTH, stdin);
     title[strcspn(title, "\n")] = '\0';  // Remove newline
     
@@ -295,7 +296,7 @@ void addBook() {
     isbn[strcspn(isbn, "\n")] = '\0';  // Remove newline
     
     bookCount++;
-    Book* newBook = createBook(bookCount, title, author, isbn);
+    Book* newBook = addBook(bookCount, title, author, isbn);
     bookRoot = insertBook(bookRoot, newBook);
     
     printf("Book added successfully!\n");
@@ -316,20 +317,20 @@ void editBook() {
     printf("Current details:\n");
     displayBook(book);
     
-    printf("\nEnter new details (or leave blank to keep current):\n");
+    
     
     char title[MAX_TITLE_LENGTH];
     char author[MAX_AUTHOR_LENGTH];
     char isbn[MAX_ISBN_LENGTH];
     int choice;
-    
+    do{
+    printf("\nEnter new details (or leave blank to keep current):\n");
     printf("1. Edit title\n");
     printf("2. Edit author\n");
     printf("3. Edit ISBN\n");
     printf("4. Back\n");
     printf("Enter choice: ");
     scanf("%d", &choice);
-    fflush(stdin);
     
     switch (choice) {
         case 1:
@@ -364,7 +365,7 @@ void editBook() {
         default:
             printf("Invalid choice!\n");
     }
-    
+}while (choice !=4);
     printf("Book updated successfully!\n");
 }
 
@@ -422,7 +423,7 @@ void manageBooks() {
         
         switch (choice) {
             case 1:
-                addBook();
+                inBookinfo();
                 break;
             case 2:
                 editBook();
@@ -1697,10 +1698,11 @@ printf("7. Trees (Display Student Directory, Display Library Catalog, Library St
 printf("8. Save Data to File\n");
 printf("9. Load Data from File\n");
 printf("10. Exit ");
+scanf("%d" , &choice );
 switch (choice)
 {
 case 1:
-    
+  manageBooks();
     break;
 case 2:
     
