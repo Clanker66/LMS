@@ -43,6 +43,7 @@ typedef struct Book {
     char author[MAX_AUTHOR_LENGTH];
     char isbn[MAX_ISBN_LENGTH];
     BookStatus status;
+    int UID;
     struct Book* left;
     struct Book* right;
 } Book;
@@ -55,13 +56,13 @@ typedef struct User {
     int age;
     char gender;
     UserStatus status;
+    Book *borrowed;
     struct User* next;
 } User;
 
 // Book Queue Node for reservations
 typedef struct QueueNode {
     int userId;
-    int bookId;
     struct QueueNode* next;
 } QueueNode;
 
@@ -109,12 +110,17 @@ BookQueue bookQueues[MAX_BOOKS];
 BrowsingStack browsingHistory;
 Section* libraryRoot = NULL;
 BorrowRecord* borrowRecords = NULL;
-int bookCount = 0;
+int numbooks = 0;
 int userCount = 0;
 int borrowCount = 0;
 
 /********************************************/
-/* BOOK MANAGMENT set of Functions          */
+/*     Function prototypes (needed )        */
+/********************************************/
+
+void pushToBrowsingHistory(int bookId);
+/********************************************/
+/* BOOK MANAGEMENT set of Functions          */
 /********************************************/
 
 // Create a new book
@@ -175,23 +181,25 @@ Book* searchBookById(Book* root, int id) {
 }
 
 // Search for book by title (partial match)
-Book* searchBookByTitle(Book* root, const char* title, Book* result) {
+Book* searchBookByTitle(Book* root, const char* title) {
     if (root == NULL) {
-        return result;
+        return NULL;
     }
     
     if (strstr(root->title, title) != NULL) {
-        printf("Found:%s by %s (ID = %d) \n", root->id, root->title, root->author);
-        result = root;
+        printf("Found: %s by %s (ID = %d)\n", root->title, root->author, root->id);
+        return root;
     }
     
-    result = searchBookByTitle(root->left, title, result);
-    result = searchBookByTitle(root->right, title, result);
+    Book* leftResult = searchBookByTitle(root->left, title);
+    if (leftResult != NULL) {
+        return leftResult;
+    }
     
-    return result;
+    return searchBookByTitle(root->right, title);
 }
-
 // Find minimum value node in BST (helper for deletion)
+
 Book* findMinValueNode(Book* root) {
     Book* current = root;
     
@@ -278,15 +286,17 @@ void displayAllBooks(Book* root) {
 }
 
 // Add a new book via user input
-void inBookinfo() {
+void bookInSys() {
     char title[MAX_TITLE_LENGTH];
     char author[MAX_AUTHOR_LENGTH];
     char isbn[MAX_ISBN_LENGTH];
-    
+    while ((getchar()) != '\n');
+
     printf("Enter book title: ");
     fgets(title, MAX_TITLE_LENGTH, stdin);
     title[strcspn(title, "\n")] = '\0';  // Remove newline
-    
+
+
     printf("Enter author name: ");
     fgets(author, MAX_AUTHOR_LENGTH, stdin);
     author[strcspn(author, "\n")] = '\0';  // Remove newline
@@ -295,8 +305,8 @@ void inBookinfo() {
     fgets(isbn, MAX_ISBN_LENGTH, stdin);
     isbn[strcspn(isbn, "\n")] = '\0';  // Remove newline
     
-    bookCount++;
-    Book* newBook = addBook(bookCount, title, author, isbn);
+    numbooks++;
+    Book* newBook = addBook(numbooks, title, author, isbn);
     bookRoot = insertBook(bookRoot, newBook);
     
     printf("Book added successfully!\n");
@@ -318,7 +328,6 @@ void editBook() {
     displayBook(book);
     
     
-    
     char title[MAX_TITLE_LENGTH];
     char author[MAX_AUTHOR_LENGTH];
     char isbn[MAX_ISBN_LENGTH];
@@ -331,7 +340,8 @@ void editBook() {
     printf("4. Back\n");
     printf("Enter choice: ");
     scanf("%d", &choice);
-    
+    printf("----------------------------------------------------\n");
+    while ((getchar()) != '\n');
     switch (choice) {
         case 1:
             printf("Enter new title: ");
@@ -423,7 +433,7 @@ void manageBooks() {
         
         switch (choice) {
             case 1:
-                inBookinfo();
+                bookInSys();
                 break;
             case 2:
                 editBook();
@@ -511,6 +521,7 @@ User* searchUserByName(const char* name) {
 
 // Display user details
 void displayUser(User* user) {
+    printf("---------------------------\n");
     if (user != NULL) {
         printf("ID: %d\n", user->id);
         printf("Name: %s\n", user->name);
@@ -550,7 +561,7 @@ void displayAllUsers() {
 }
 
 // Delete user
-void deleteUser(int id) {
+void delusernode(int id) {
     if (userList == NULL) {
         printf("No users in the system!\n");
         return;
@@ -586,14 +597,14 @@ void deleteUser(int id) {
 }
 
 // Add a new user via user input
-void addUser() {
+void userInSys() {
     char name[MAX_NAME_LENGTH];
     char user_id[MAX_ID_LENGTH];
     int age;
     char gender;
-    
+    while ((getchar()) != '\n');
+
     printf("Enter user name: ");
-    fflush(stdin);
     fgets(name, MAX_NAME_LENGTH, stdin);
     name[strcspn(name, "\n")] = '\0';  // Remove newline
     
@@ -605,7 +616,6 @@ void addUser() {
     scanf("%d", &age);
     
     printf("Enter gender (M/F): ");
-    fflush(stdin);
     scanf(" %c", &gender);
     
     userCount++;
@@ -630,14 +640,15 @@ void editUser() {
     printf("Current details:\n");
     displayUser(user);
     
-    printf("\nEnter new details (or leave blank to keep current):\n");
-    
     int choice;
     char name[MAX_NAME_LENGTH];
     char user_id[MAX_ID_LENGTH];
     int age;
     char gender;
+
     
+    do{
+    printf("\nEnter new details (or leave blank to keep current):\n");
     printf("1. Edit name\n");
     printf("2. Edit user ID\n");
     printf("3. Edit age\n");
@@ -645,8 +656,10 @@ void editUser() {
     printf("5. Edit status\n");
     printf("6. Back\n");
     printf("Enter choice: ");
+    printf("----------------------------------------------------\n");
     scanf("%d", &choice);
-    fflush(stdin);
+
+    while ((getchar()) != '\n'); 
     
     switch (choice) {
         case 1:
@@ -674,7 +687,6 @@ void editUser() {
             break;
         case 4:
             printf("Enter new gender (M/F): ");
-            fflush(stdin);
             scanf(" %c", &gender);
             user->gender = gender;
             break;
@@ -705,7 +717,7 @@ void editUser() {
         default:
             printf("Invalid choice!\n");
     }
-    
+}while(choice != 6 );
     printf("User updated successfully!\n");
 }
 
@@ -725,7 +737,7 @@ void viewUser() {
 }
 
 // Delete user menu function
-void deleteUserMenu() {
+void deleteUser() {
     int id;
     printf("Enter user ID to delete: ");
     scanf("%d", &id);
@@ -746,7 +758,7 @@ void deleteUserMenu() {
         current = current->next;
     }
     
-    deleteUser(id);
+    delusernode(id);
 }
 
 // User management menu
@@ -766,7 +778,7 @@ void manageUsers() {
         
         switch (choice) {
             case 1:
-                addUser();
+                userInSys();
                 break;
             case 2:
                 editUser();
@@ -775,7 +787,7 @@ void manageUsers() {
                 viewUser();
                 break;
             case 4:
-                deleteUserMenu();
+                deleteUser();
                 break;
             case 5:
                 displayAllUsers();
@@ -813,7 +825,6 @@ void enqueueUser(int bookId, int userId) {
     }
     
     newNode->userId = userId;
-    newNode->bookId = bookId;
     newNode->next = NULL;
     
     // If queue is empty
@@ -887,7 +898,7 @@ BorrowRecord* createBorrowRecord(int userId, int bookId) {
     newRecord->userId = userId;
     newRecord->bookId = bookId;
     newRecord->borrowDate = time(NULL);
-    newRecord->dueDate = newRecord->borrowDate + (14 * 24 * 60 * 60); // 14 days loan period
+    newRecord->dueDate = newRecord->borrowDate + (1209600); // 14 days loan period
     newRecord->returned = false;
     newRecord->returnDate = 0;
     newRecord->next = NULL;
@@ -1036,17 +1047,22 @@ void displayAllBorrowRecords() {
 
 // Borrow a book
 void borrowBook() {
-    int bookId, userId;
+
+    char title[MAX_TITLE_LENGTH-1],name[MAX_NAME_LENGTH];
     
-    printf("Enter Book ID to borrow: ");
-    scanf("%d", &bookId);
-    
+    printf("Enter Book Title (or part of it): ");
+    while ((getchar()) != '\n');
+    fgets(title, MAX_TITLE_LENGTH, stdin);
+    title[strcspn(title, "\n")] = '\0';
+
     printf("Enter User ID: ");
-    scanf("%d", &userId);
-    
+    while ((getchar()) != '\n'); // Clear input buffer
+    fgets(name, MAX_NAME_LENGTH, stdin);
+    name[strcspn(name, "\n")] = '\0';
+
     // Validate book and user
-    Book* book = searchBookById(bookRoot, bookId);
-    User* user = searchUserById(userId);
+    Book* book = searchBookByTitle(bookRoot, title);
+    User* user = searchUserByName(name);
     
     if (book == NULL) {
         printf("Book not found!\n");
@@ -1067,14 +1083,15 @@ void borrowBook() {
     // Check if book is available
     if (book->status == AVAILABLE) {
         // Create borrow record
-        BorrowRecord* newRecord = createBorrowRecord(userId, bookId);
+        BorrowRecord* newRecord = createBorrowRecord(user->id, book->id);
         addBorrowRecord(newRecord);
         
         // Update book status
         book->status = BORROWED;
         
         // Add to browsing history
-        pushToBrowsingHistory(bookId);
+        int bid = book->id;
+        pushToBrowsingHistory(bid);
         
         printf("Book borrowed successfully!\n");
         
@@ -1089,12 +1106,12 @@ void borrowBook() {
         
         if (choice == 1) {
             // Initialize queue if not initialized
-            if (bookQueues[bookId].size == 0) {
-                initializeBookQueue(bookId);
+            if (bookQueues[book->id].size == 0) {
+                initializeBookQueue(book->id);
             }
             
             // Add user to queue
-            enqueueUser(bookId, userId);
+            enqueueUser(book->id, user->id);
             printf("User added to reservation queue!\n");
         }
     } else if (book->status == RESERVED) {
@@ -1104,7 +1121,7 @@ void borrowBook() {
         
         if (choice == 1) {
             // Add user to queue
-            enqueueUser(bookId, userId);
+            enqueueUser(book->id, user->id);
             printf("User added to reservation queue!\n");
         }
     }
@@ -1478,6 +1495,7 @@ int isStackEmpty() {
 // Push book to browsing history
 void pushToBrowsingHistory(int bookId) {
     StackNode* newNode = (StackNode*)malloc(sizeof(StackNode));
+
     if (newNode == NULL) {
         printf("Memory allocation failed!\n");
         return;
@@ -1641,7 +1659,6 @@ void addSection() {
     char parentName[MAX_TITLE_LENGTH];
     
     printf("Enter section name: ");
-    fflush(stdin);
     fgets(name, MAX_TITLE_LENGTH, stdin);
     name[strcspn(name, "\n")] = '\0';  // Remove newline
     
@@ -1682,6 +1699,86 @@ void addSection() {
     }
 }
 
+/********************************************/
+/*         Search functionalities           */
+/********************************************/
+
+void searchMenu() {
+    int choice;
+    
+    do {
+        printf("\n=== Search Menu ===\n");
+        printf("1. Search Book by ID\n");
+        printf("2. Search Book by Title\n");
+        printf("3. Search User by ID\n");
+        printf("4. Search User by Name\n");
+        printf("5. Back\n");
+        printf("Choose an option: ");
+        scanf("%d", &choice);
+        
+        switch (choice) {
+            case 1: {
+                int id;
+                printf("Enter Book ID: ");
+                scanf("%d", &id);
+                Book* book = searchBookById(bookRoot, id);
+                if (book != NULL) {
+                    displayBook(book);
+                } else {
+                    printf("Book not found!\n");
+                }
+                break;
+            }
+            case 2: {
+                char title[MAX_TITLE_LENGTH];
+                printf("Enter Book Title (or part of it): ");
+                while ((getchar()) != '\n'); // Clear input buffer
+                fgets(title, MAX_TITLE_LENGTH, stdin);
+                title[strcspn(title, "\n")] = '\0';
+
+                Book* book = searchBookByTitle(bookRoot, title);
+                if (book != NULL) {
+                    displayBook(book);
+                } else {
+                    printf("No books found matching '%s'\n", title);
+                }
+                
+                break;
+            }
+            case 3: {
+                int id;
+                printf("Enter User ID: ");
+                scanf("%d", &id);
+                User* user = searchUserById(id);
+                if (user != NULL) {
+                    displayUser(user);
+                } else {
+                    printf("User not found!\n");
+                }
+                break;
+            }
+            case 4: {
+                char name[MAX_NAME_LENGTH];
+                printf("Enter User Name: ");
+                while ((getchar()) != '\n'); // Clear input buffer
+                fgets(name, MAX_NAME_LENGTH, stdin);
+                name[strcspn(name, "\n")] = '\0';
+                User* user = searchUserByName(name);
+                if (user != NULL) {
+                    displayUser(user);
+                } else {
+                    printf("User not found!\n");
+                }
+                break;
+            }
+            case 5:
+                return;
+            default:
+                printf("Invalid choice!\n");
+        }
+    } while (choice != 5);
+}
+
 void main(){
 bool flag = true  ;
 int choice;
@@ -1689,15 +1786,14 @@ while(flag){
  printf("=== Library Management System === \n ");
 printf("1. Manage Books \n");
 printf("2. Manage Users/Students\n");
-printf("3. Manage Borrow Book (Reserve , Cancel Reservation, Check Book Availability,\n");
-printf("Return, Borrowing Queue, Undo Last Return, etc)\n");
+printf("3. Manage Borrowed Books \n");
 printf("4. Browse Library Sections\n");
 printf("5. Search (Catalog, Student by ID/Name, Book by ID/Title\n");
 printf("6. View Browsing History\n");
 printf("7. Trees (Display Student Directory, Display Library Catalog, Library Structure, etc)\n");
 printf("8. Save Data to File\n");
 printf("9. Load Data from File\n");
-printf("10. Exit ");
+printf("10. Exit \n");
 scanf("%d" , &choice );
 switch (choice)
 {
@@ -1705,16 +1801,16 @@ case 1:
   manageBooks();
     break;
 case 2:
-    
+  manageUsers();
     break;
 case 3:
-    
+  manageBorrowing();
     break;
 case 4:
     
     break;
 case 5:
-    
+    searchMenu();
     break;
 case 6:
     
