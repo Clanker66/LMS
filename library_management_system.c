@@ -43,7 +43,6 @@ typedef struct Book {
     char author[MAX_AUTHOR_LENGTH];
     char isbn[MAX_ISBN_LENGTH];
     BookStatus status;
-    int UID;
     struct Book* left;
     struct Book* right;
 } Book;
@@ -76,8 +75,15 @@ typedef struct {
 // Browsing History Stack Node
 typedef struct StackNode {
     int bookId;
+    int userId;
+    time_t returnDate;
     struct StackNode* next;
 } StackNode;
+
+typedef struct returnstack{
+    int size ;
+    StackNode *top;
+}rstack;
 
 // Browsing History Stack
 typedef struct {
@@ -110,14 +116,16 @@ BookQueue bookQueues[MAX_BOOKS];
 BrowsingStack browsingHistory;
 Section* libraryRoot = NULL;
 BorrowRecord* borrowRecords = NULL;
+rstack* returnStack;
 int numbooks = 0;
-int userCount = 0;
+int numofuser = 0;
 int borrowCount = 0;
+
 
 /********************************************/
 /*     Function prototypes (needed )        */
 /********************************************/
-
+void pushToReturnHistory(int bookId , int userId);
 void pushToBrowsingHistory(int bookId);
 /********************************************/
 /* BOOK MANAGEMENT set of Functions          */
@@ -618,8 +626,8 @@ void userInSys() {
     printf("Enter gender (M/F): ");
     scanf(" %c", &gender);
     
-    userCount++;
-    User* newUser = createUser(userCount, name, user_id, age, gender);
+    numofuser++;
+    User* newUser = createUser(numofuser, name, user_id, age, gender);
     addUserToList(newUser);
     
     printf("User added successfully!\n");
@@ -941,7 +949,7 @@ void returnBook(int bookId, int userId) {
                     book->status = AVAILABLE;
                 }
             }
-            
+            pushToReturnHistory(bookId,userId);
             printf("Book returned successfully!\n");
             return;
         }
@@ -951,8 +959,50 @@ void returnBook(int bookId, int userId) {
     printf("No matching borrow record found!\n");
 }
 
+void pushToReturnHistory(int bookId , int userId) {
+    StackNode* newNode = (StackNode*)malloc(sizeof(StackNode));
+    newNode->next = NULL ; 
+    if (newNode == NULL) {
+        printf("Memory allocation failed!\n");
+        return;
+    }
+    
+    newNode->bookId = bookId;
+    newNode->userId = userId;
+    newNode->returnDate = time(NULL);
+    newNode->next = returnStack->top;
+    returnStack->top = newNode;
+    
+    // Limit stack size
+    if (returnStack->size > MAX_STACK_SIZE) {
+        // Remove bottom node
+        StackNode* current = returnStack->top;
+        StackNode* prev = NULL;
+        
+        while (current->next != NULL) {
+            prev = current;
+            current = current->next;
+        }
+        
+        if (prev != NULL) {
+            prev->next = NULL;
+            free(current);
+            returnStack->size--;
+        }
+    }
+}
+
+void displayLastReturn(){
+
+    Book* returnedBook = searchBookById(bookRoot , returnStack->top->bookId);
+    User* user = searchUserById(returnStack->top->userId);
+    printf("%s has been returned by %s" , returnedBook->title , user->name);
+
+}
+
+void undoLastReturn(){} 
 // Undo last return
-void undoLastReturn() {
+void undoLastReturn2() {
     BorrowRecord* current = borrowRecords;
     BorrowRecord* lastReturn = NULL;
     time_t latestReturnTime = 0;
@@ -1049,14 +1099,14 @@ void displayAllBorrowRecords() {
 void borrowBook() {
 
     char title[MAX_TITLE_LENGTH-1],name[MAX_NAME_LENGTH];
+
     
     printf("Enter Book Title (or part of it): ");
     while ((getchar()) != '\n');
     fgets(title, MAX_TITLE_LENGTH, stdin);
     title[strcspn(title, "\n")] = '\0';
 
-    printf("Enter User ID: ");
-    while ((getchar()) != '\n'); // Clear input buffer
+    printf("Enter User's name: ");
     fgets(name, MAX_NAME_LENGTH, stdin);
     name[strcspn(name, "\n")] = '\0';
 
@@ -1161,7 +1211,23 @@ void reserveBook() {
     if (bookQueues[bookId].size == 0) {
         initializeBookQueue(bookId);
     }
-    
+
+    //checks if is already in queue 
+    int Uid;bool exist = false ;
+    for(int i=0 ; i<bookQueues[bookId].size ; i++){
+        Uid = dequeueUser(bookId);
+
+        if(Uid == userId){
+        exist = true;
+        }
+
+        enqueueUser(bookId , Uid);
+    }
+    if(exist){
+        printf("the user is already in the reservation queue");
+        return;
+    }
+
     // Add user to queue
     enqueueUser(bookId, userId);
     
@@ -1389,7 +1455,6 @@ void returnBookMenu() {
     // Verify the user has borrowed this book
     BorrowRecord* current = borrowRecords;
     bool userHasBorrowed = false;
-    
     while (current != NULL) {
         if (current->bookId == bookId && current->userId == userId && !current->returned) {
             userHasBorrowed = true;
@@ -1418,6 +1483,30 @@ void returnBookMenu() {
     }
 }
 
+//displays all the books currently being borrowed by a used
+void displayAllBorrowByUser(int userId){
+    BorrowRecord* current = borrowRecords;
+    User* user = searchUserById(userId);
+    int count = 0;
+
+    while (current != NULL){
+        if(current->userId == userId);
+        Book* book = searchBookById(bookRoot , current->bookId);
+        printf("%s has borrowed %s \n " ,user->name , book->title );
+        current = current->next;
+        count++;
+    }
+
+    if(count == 0){
+        printf("%s has no borrowed books for the time being" , user->name);
+    }
+    else{
+        printf("%s has borrowed %d books" , user->name , count);
+    }
+
+    
+}
+
 // Book borrowing management menu
 void manageBorrowing() {
     int choice;
@@ -1431,9 +1520,11 @@ void manageBorrowing() {
         printf("5. Check Book Availability\n");
         printf("6. Display Book Queue\n");
         printf("7. Process Next Reservation\n");
-        printf("8. Undo Last Return\n");
-        printf("9. View All Borrow Records\n");
-        printf("10. Back\n");
+        printf("8. View last return\n");
+        printf("9. Undo Last Return\n");
+        printf("10. View All Borrow Records \n");
+        printf("11. View all the books borrowed by User \n");
+        printf("12. Back\n");
         printf("Choose an option: ");
         scanf("%d", &choice);
         
@@ -1464,17 +1555,26 @@ void manageBorrowing() {
                 processNextReservation();
                 break;
             case 8:
-                undoLastReturn();
+                displayLastReturn();
                 break;
             case 9:
-                displayAllBorrowRecords();
+                undoLastReturn();
                 break;
             case 10:
+                displayAllBorrowRecords();
+                break;
+            case 11:
+                int userId;
+                printf("Enter User ID to view all the borrowed books");
+                scanf("%d" , &userId);
+                displayAllBorrowByUser(userId); 
+                break;
+            case 12:
                 return;
             default:
                 printf("Invalid choice!\n");
         }
-    } while (choice != 10);
+    } while (choice != 12);
 }
 
 /********************************************/
@@ -1482,9 +1582,17 @@ void manageBorrowing() {
 /********************************************/
 
 // Initialize browsing history stack
-void initializeBrowsingStack() {
+void initBrowsingStack() {
     browsingHistory.top = NULL;
     browsingHistory.size = 0;
+
+    returnStack = (rstack*)malloc(sizeof(rstack));
+    if (returnStack == NULL) {
+        printf("Memory allocation failed for return stack!\n");
+        exit(1); // Exit if memory allocation fails
+    }
+    returnStack->top = NULL;
+    returnStack->size = 0;
 }
 
 // Check if stack is empty
@@ -1492,7 +1600,7 @@ int isStackEmpty() {
     return browsingHistory.top == NULL;
 }
 
-// Push book to browsing history
+// Push book to borrowing history
 void pushToBrowsingHistory(int bookId) {
     StackNode* newNode = (StackNode*)malloc(sizeof(StackNode));
 
@@ -1780,11 +1888,11 @@ void searchMenu() {
 }
 
 void main(){
-bool flag = true  ;
 int choice;
-while(flag){
- printf("=== Library Management System === \n ");
-printf("1. Manage Books \n");
+initBrowsingStack();
+do{
+printf("=== Library Management System === ");
+printf("\n1. Manage Books \n");
 printf("2. Manage Users/Students\n");
 printf("3. Manage Borrowed Books \n");
 printf("4. Browse Library Sections\n");
@@ -1825,12 +1933,12 @@ case 9:
     
     break;
 case 10:
-    flag = false ;
+printf("thanks for using our system");
     break;
 default:
 printf("please select a valid choice ");
     break;
 }
-}
+}while(choice != 10);
 
 }
