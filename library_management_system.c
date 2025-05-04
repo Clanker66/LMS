@@ -1825,11 +1825,11 @@ void displaySystemHistory() {
         switch (current->typeOfAction)
         {
         case USERADDED:
-        acttime= localtime(&current->timeOfAction);
+        acttime= localtime(&(current->timeOfAction));
         printf("%d - A user going by the name of %s has been added on :\n %s " ,position, current->userCopy->name ,asctime(acttime) );
             break;
         case USERDELETED:
-        acttime= localtime(&current->timeOfAction);
+        acttime= localtime(&(current->timeOfAction));
         printf("%d - A user going by the name of %s was deleted on :\n %s " ,position, current->userCopy->name ,asctime(acttime) );
             break;
         case BOOKADDED:
@@ -1837,7 +1837,7 @@ void displaySystemHistory() {
         printf("%d - A book with the title of %s has been added on :\n %s " ,position , current->bookCopy->title , asctime(acttime) );
             break;
         case BOOKDELETED:
-        acttime= localtime(&current->timeOfAction);
+        acttime= localtime(&(current->timeOfAction));
         printf("%d - A book with the title of %s was deleted on :\n %s ",position , current->bookCopy->title ,asctime(acttime) );
             break;
         default:
