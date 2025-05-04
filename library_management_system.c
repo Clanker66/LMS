@@ -1826,19 +1826,19 @@ void displaySystemHistory() {
         {
         case USERADDED:
         acttime= localtime(&current->timeOfAction);
-        printf("%d - A user going by the name of %s has been added on :\n %s " , current->userCopy->name ,asctime(acttime) );
+        printf("%d - A user going by the name of %s has been added on :\n %s " ,position, current->userCopy->name ,asctime(acttime) );
             break;
         case USERDELETED:
         acttime= localtime(&current->timeOfAction);
-        printf("%d - A user going by the name of %s was deleted on :\n %s " , current->userCopy->name ,asctime(acttime) );
+        printf("%d - A user going by the name of %s was deleted on :\n %s " ,position, current->userCopy->name ,asctime(acttime) );
             break;
         case BOOKADDED:
-        acttime= localtime(&current->timeOfAction);
-        printf("%d - A book with the title of %s has been added on :\n %s " , current->bookCopy->title , asctime(acttime) );
+        acttime= localtime(&(current->timeOfAction));
+        printf("%d - A book with the title of %s has been added on :\n %s " ,position , current->bookCopy->title , asctime(acttime) );
             break;
         case BOOKDELETED:
         acttime= localtime(&current->timeOfAction);
-        printf("%d - A book with the title of %s was deleted on :\n %s " , current->bookCopy->title ,asctime(acttime) );
+        printf("%d - A book with the title of %s was deleted on :\n %s ",position , current->bookCopy->title ,asctime(acttime) );
             break;
         default:
         printf("not a valid action");
