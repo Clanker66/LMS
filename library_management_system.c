@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <windows.h>
 
 #define MAX_TITLE_LENGTH 100
 #define MAX_AUTHOR_LENGTH 50
@@ -16,8 +17,6 @@
 #define MAX_STACK_SIZE 100
 #define MAX_QUEUE_SIZE 100
 #define MAX_BORROW_LIMIT 10
-#define MAX_SECTIONS 10
-#define MAX_SHELVES 20
 #define SAVE_FILE "library_data.dat"
 
 /********************************************/
@@ -45,6 +44,7 @@ USERDELETED,
 BOOKADDED,
 BOOKDELETED
 }History;
+
 // Book Structure
 typedef struct Book {
     int id;
@@ -414,7 +414,7 @@ void viewBook() {
         printf("Book not found!\n");
         return;
     }
-    
+    printf("\e[1;1H\e[2J");
     displayBook(book);
 }
 
@@ -447,6 +447,7 @@ void manageBooks() {
     int choice;
     
     do {
+        printf("\e[1;1H\e[2J");
         printf("\n=== Book Management ===\n");
         printf("1. Add Book\n");
         printf("2. Edit Book\n");
@@ -459,19 +460,29 @@ void manageBooks() {
         
         switch (choice) {
             case 1:
+            printf("\e[1;1H\e[2J");
                 bookInSys();
+                Sleep(2000);
                 break;
             case 2:
+            printf("\e[1;1H\e[2J");
                 editBook();
+                Sleep(2000);
                 break;
             case 3:
+            printf("\e[1;1H\e[2J");
                 viewBook();
+                Sleep(2000);
                 break;
             case 4:
+            printf("\e[1;1H\e[2J");
                 deleteBookMenu();
+                Sleep(2000);
                 break;
             case 5:
+            printf("\e[1;1H\e[2J");
                 displayAllBooks(bookRoot);
+                Sleep(5000);
                 break;
             case 6:
                 return;
@@ -813,19 +824,29 @@ void manageUsers() {
         
         switch (choice) {
             case 1:
+            printf("\e[1;1H\e[2J");
                 userInSys();
+                Sleep(2000);
                 break;
             case 2:
+            printf("\e[1;1H\e[2J");
                 editUser();
+                Sleep(2000);
                 break;
             case 3:
+            printf("\e[1;1H\e[2J");
                 viewUser();
+                Sleep(2000);
                 break;
             case 4:
+            printf("\e[1;1H\e[2J");
                 deleteUser();
+                Sleep(2000);
                 break;
             case 5:
+            printf("\e[1;1H\e[2J");
                 displayAllUsers();
+                Sleep(5000);
                 break;
             case 6:
                 return;
@@ -1566,6 +1587,7 @@ void manageBorrowing() {
     int choice;
     
     do {
+        printf("\e[1;1H\e[2J");
         printf("\n=== Borrow Management ===\n");
         printf("1. Borrow Book\n");
         printf("2. Return Book\n");
@@ -1585,21 +1607,32 @@ void manageBorrowing() {
 
         switch (choice) {
             case 1:
+            printf("\e[1;1H\e[2J");
                 borrowBook();
+                Sleep(2000);
                 break;
             case 2:
+            printf("\e[1;1H\e[2J");
                 returnBookMenu();
+                Sleep(2000);
                 break;
             case 3:
+            printf("\e[1;1H\e[2J");
                 reserveBook();
+                Sleep(2000);
                 break;
             case 4:
+            printf("\e[1;1H\e[2J");
                 cancelReservation();
+                Sleep(2000);
                 break;
             case 5:
+            printf("\e[1;1H\e[2J");
                 checkBookAvailability();
+                Sleep(2000);
                 break;
             case 6: {
+                printf("\e[1;1H\e[2J");
                 char title[MAX_TITLE_LENGTH];
                 printf("Enter Book Title (or part of it): ");
                 while ((getchar()) != '\n'); // Clear input buffer
@@ -1607,23 +1640,33 @@ void manageBorrowing() {
                 title[strcspn(title, "\n")] = '\0';
     
                 Book* book = searchBookByTitle(bookRoot, title);
+                printf("\e[1;1H\e[2J");
                 displayBookQueue(book->id);
+                Sleep(5000);
                 break;
             }
             case 7:
+            printf("\e[1;1H\e[2J");
                 processNextReservation();
+                Sleep(2000);
                 break;
             case 8:
+            printf("\e[1;1H\e[2J");
                 displayLastReturn();
+                Sleep(2000);
                 break;
             case 9:
+            printf("\e[1;1H\e[2J");
                 undoLastReturn();
+                Sleep(2000);
                 break;
             case 10:
+            printf("\e[1;1H\e[2J");
                 displayAllBorrowRecords();
+                Sleep(5000);
                 break;
             case 11:
-            //doesnt work
+            printf("\e[1;1H\e[2J");
             char name[MAX_NAME_LENGTH];
             printf("Enter User's name: ");
             while ((getchar()) != '\n');
@@ -1634,9 +1677,12 @@ void manageBorrowing() {
 
             if(user == NULL){
                 printf("user unfound");
+                Sleep(2000);
                 break;
             }
+            printf("\e[1;1H\e[2J");
                 displayAllBorrowByUser(user->id); 
+                Sleep(2000);
                 break;
             case 12:
                 return;
@@ -1859,6 +1905,7 @@ void displaySystemHistory() {
 void HistoryMenu(){
 int choice;
 do{
+    printf("\e[1;1H\e[2J");
     printf("\n=== History Menu ===\n");
     printf("1. View Recent History\n");
     printf("2. undo Most recent Action\n");
@@ -1869,10 +1916,13 @@ do{
     switch (choice)
     {
     case 1:
+    printf("\e[1;1H\e[2J");
         displaySystemHistory();
         break;
     case 2:
+    printf("\e[1;1H\e[2J");
         undoSystemhistory();
+        Sleep(2000);
         break;
     case 3:
         return;
@@ -1894,6 +1944,7 @@ void searchMenu() {
     int choice;
     
     do {
+        printf("\e[1;1H\e[2J");
         printf("\n=== Search Menu ===\n");
         printf("1. Search Book by ID\n");
         printf("2. Search Book by Title\n");
@@ -1905,18 +1956,22 @@ void searchMenu() {
         
         switch (choice) {
             case 1: {
+                printf("\e[1;1H\e[2J");
                 int id;
                 printf("Enter Book ID: ");
                 scanf("%d", &id);
+                printf("\e[1;1H\e[2J");
                 Book* book = searchBookById(bookRoot, id);
                 if (book != NULL) {
                     displayBook(book);
                 } else {
                     printf("Book not found!\n");
                 }
+                Sleep(2000);
                 break;
             }
             case 2: {
+                printf("\e[1;1H\e[2J");
                 char title[MAX_TITLE_LENGTH];
                 printf("Enter Book Title (or part of it): ");
                 while ((getchar()) != '\n'); // Clear input buffer
@@ -1924,38 +1979,45 @@ void searchMenu() {
                 title[strcspn(title, "\n")] = '\0';
 
                 Book* book = searchBookByTitle(bookRoot, title);
+                printf("\e[1;1H\e[2J");
                 if (book != NULL) {
                     displayBook(book);
                 } else {
                     printf("No books found matching '%s'\n", title);
                 }
-                
+                Sleep(2000);
                 break;
             }
             case 3: {
                 int id;
+                printf("\e[1;1H\e[2J");
                 printf("Enter User ID: ");
                 scanf("%d", &id);
                 User* user = searchUserById(id);
+                printf("\e[1;1H\e[2J");
                 if (user != NULL) {
                     displayUser(user);
                 } else {
                     printf("User not found!\n");
                 }
+                Sleep(2000);
                 break;
             }
             case 4: {
+                printf("\e[1;1H\e[2J");
                 char name[MAX_NAME_LENGTH];
                 printf("Enter User Name: ");
                 while ((getchar()) != '\n'); // Clear input buffer
                 fgets(name, MAX_NAME_LENGTH, stdin);
                 name[strcspn(name, "\n")] = '\0';
                 User* user = searchUserByName(name);
+                printf("\e[1;1H\e[2J");
                 if (user != NULL) {
                     displayUser(user);
                 } else {
                     printf("User not found!\n");
                 }
+                Sleep(2000);
                 break;
             }
             case 5:
@@ -1967,11 +2029,160 @@ void searchMenu() {
 }
 
 /********************************************/
+/* File Handling Functions                  */
+/********************************************/
+
+// Save book data to file
+void saveBooks(FILE* file, Book* root) {
+    if (root == NULL) {
+        return;
+    }
+    
+    // Save current book
+    fwrite(root, sizeof(Book), 1, file);
+    
+    // Save left and right subtrees
+    saveBooks(file, root->left);
+    saveBooks(file, root->right);
+}
+
+// Save user data to file
+void saveUsers(FILE* file) {
+    User* current = userList;
+    while (current != NULL) {
+        fwrite(current, sizeof(User), 1, file);
+        current = current->next;
+    }
+}
+
+// Save borrow records to file
+void saveBorrowRecords(FILE* file) {
+    BorrowRecord* current = borrowRecords;
+    while (current != NULL) {
+        fwrite(current, sizeof(BorrowRecord), 1, file);
+        current = current->next;
+    }
+}
+
+// Save all data to file
+void saveAllData() {
+    FILE* file = fopen(SAVE_FILE, "wb");
+    if (file == NULL) {
+        printf("Error opening file for writing!\n");
+        return;
+    }
+    
+    // Save counters first
+    fwrite(&numbooks, sizeof(int), 1, file);
+    fwrite(&numofuser, sizeof(int), 1, file);
+    fwrite(&borrowCount, sizeof(int), 1, file);
+    
+    // Save books (BST)
+    saveBooks(file, bookRoot);
+    
+    // Save users (Linked List)
+    saveUsers(file);
+    
+    // Save borrow records (Linked List)
+    saveBorrowRecords(file);
+    
+    
+    fclose(file);
+    printf("Data saved successfully to %s\n", SAVE_FILE);
+}
+
+// Load book data from file and rebuild BST
+Book* loadBooks(FILE* file, int bookCount) {
+    Book* root = NULL;
+    for (int i = 0; i < bookCount; i++) {
+        Book* book = (Book*)malloc(sizeof(Book));
+        if (fread(book, sizeof(Book), 1, file) != 1) {
+            free(book);
+            break;
+        }
+        book->left = NULL;
+        book->right = NULL;
+        root = insertBook(root, book);
+    }
+    return root;
+}
+
+// Load user data from file and rebuild linked list
+void loadUsers(FILE* file, int userCount) {
+    userList = NULL;
+    User* prev = NULL;
+    for (int i = 0; i < userCount; i++) {
+        User* user = (User*)malloc(sizeof(User));
+        if (fread(user, sizeof(User), 1, file) != 1) {
+            free(user);
+            break;
+        }
+        user->next = NULL;
+        if (prev == NULL) {
+            userList = user;
+        } else {
+            prev->next = user;
+        }
+        prev = user;
+    }
+}
+
+// Load borrow records from file and rebuild linked list
+void loadBorrowRecords(FILE* file, int recordCount) {
+    borrowRecords = NULL;
+    BorrowRecord* prev = NULL;
+    for (int i = 0; i < recordCount; i++) {
+        BorrowRecord* record = (BorrowRecord*)malloc(sizeof(BorrowRecord));
+        if (fread(record, sizeof(BorrowRecord), 1, file) != 1) {
+            free(record);
+            break;
+        }
+        record->next = NULL;
+        if (prev == NULL) {
+            borrowRecords = record;
+        } else {
+            prev->next = record;
+        }
+        prev = record;
+    }
+}
+
+
+
+// Load all data from file
+void loadAllData() {
+    FILE* file = fopen(SAVE_FILE, "rb");
+    if (file == NULL) {
+        printf("No saved data found!\n");
+        return;
+    }
+    
+    // Load counters first
+    fread(&numbooks, sizeof(int), 1, file);
+    fread(&numofuser, sizeof(int), 1, file);
+    fread(&borrowCount, sizeof(int), 1, file);
+    
+    // Load books (BST)
+    bookRoot = loadBooks(file, numbooks);
+    
+    // Load users (Linked List)
+    loadUsers(file, numofuser);
+    
+    // Load borrow records (Linked List)
+    loadBorrowRecords(file, borrowCount);
+    
+    
+    fclose(file);
+    printf("Data loaded successfully from %s\n", SAVE_FILE);
+}
+
+/********************************************/
 /*              Main function               */
 /********************************************/
 void main(){
 int choice;
 initStacks();
+
 do{
 printf("=== Library Management System === ");
 printf("\n1. Manage Books \n");
@@ -1979,38 +2190,43 @@ printf("2. Manage Users/Students\n");
 printf("3. Manage Borrowed Books \n");
 printf("4. Search (Catalog, Student by ID/Name, Book by ID/Title \n");
 printf("5. View System History \n");
-printf("6. Display Directories \n");
-printf("7. Save Data to File\n");
-printf("8. Load Data from File\n");
-printf("9. Exit \n");
+printf("6. Save Data to File\n");
+printf("7. Load Data from File\n");
+printf("8. Exit \n");
 scanf("%d" , &choice );
 switch (choice)
 {
 case 1:
+printf("\e[1;1H\e[2J");
   manageBooks();
     break;
 case 2:
+printf("\e[1;1H\e[2J");
   manageUsers();
     break;
 case 3:
+printf("\e[1;1H\e[2J");
   manageBorrowing();
     break;
 case 4:
+printf("\e[1;1H\e[2J");
   searchMenu();
     break;
 case 5:
+printf("\e[1;1H\e[2J");
   HistoryMenu();
     break;
 case 6:
-    
+printf("\e[1;1H\e[2J");
+    saveAllData();
+    Sleep(2000);
     break;
 case 7:
-    
+printf("\e[1;1H\e[2J");
+    loadAllData();
+    Sleep(2000);
     break;
 case 8:
-    
-    break;
-case 9:
 printf("thanks for using our system");
     break;
 default:
