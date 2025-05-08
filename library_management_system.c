@@ -298,10 +298,13 @@ void displayBook(Book* book) {
 
 // In-order traversal to display all books
 void displayAllBooks(Book* root) {
+    
     if (root != NULL) {
         displayAllBooks(root->left);
         displayBook(root);
         displayAllBooks(root->right);
+    }else {
+        printf("No books found!\n");
     }
 }
 
@@ -328,7 +331,12 @@ void bookInSys() {
     numbooks++;
     Book* newBook = addBook(numbooks, title, author, isbn);
     bookRoot = insertBook(bookRoot, newBook);
-    pushToSystemHistory(newBook , NULL , BOOKADDED);
+    Book* bookCopy = (Book*)malloc(sizeof(Book));
+    if (bookCopy == NULL) {
+        printf("Memory allocation failed! , action failed , not added to history\n");
+    }
+    *bookCopy = *newBook;
+    pushToSystemHistory(bookCopy , NULL , BOOKADDED);
     printf("Book added successfully!\n");
 }
 
@@ -437,7 +445,12 @@ void deleteBookMenu() {
         printf("Cannot delete book as it is currently borrowed or reserved!\n");
         return;
     }
-    pushToSystemHistory(book , NULL , BOOKDELETED);
+    Book* bookCopy = (Book*)malloc(sizeof(Book));
+    if (bookCopy == NULL) {
+        printf("Memory allocation failed! , action failed , not added to history\n");
+    }
+    *bookCopy = *book;
+    pushToSystemHistory(bookCopy , NULL , BOOKDELETED);
     bookRoot = deleteBook(bookRoot, book->id);
     printf("Book deleted successfully!\n");
 }
@@ -630,7 +643,12 @@ void delusernode(int id) {
     
     // Delete the node
     prev->next = current->next;
-    pushToSystemHistory(NULL,current,USERDELETED);
+    User* userCopy = (User*)malloc(sizeof(User));
+    if (userCopy == NULL) {
+        printf("Memory allocation failed! , action failed , not added to history\n");
+    }
+    *userCopy = *current;
+    pushToSystemHistory(NULL,userCopy,USERDELETED);
     free(current);
     printf("User deleted successfully!\n");
 }
@@ -660,6 +678,11 @@ void userInSys() {
     numofuser++;
     User* newUser = createUser(numofuser, name, user_id, age, gender);
     addUserToList(newUser);
+    User* userCopy = (User*)malloc(sizeof(User));
+    if (userCopy == NULL) {
+        printf("Memory allocation failed! , action failed , not added to history\n");
+    }
+    *userCopy = *newUser;
     pushToSystemHistory(NULL,newUser,USERADDED);
     printf("User added successfully!\n");
 }
@@ -1826,7 +1849,7 @@ void undoSystemhistory() {
     strcpy(name , HistoryStack->top->userCopy->name);
     strcpy(uid , HistoryStack->top->userCopy->user_id);
     User* user = (User*)malloc(sizeof(User));
-    user =createUser(id, name , uid , age , gender);
+    user = createUser(id, name , uid , age , gender);
     addUserToList(user);
     printf("Action undone successfully");
     }
@@ -1842,7 +1865,8 @@ void undoSystemhistory() {
         strcpy(title ,HistoryStack->top->bookCopy->title);
         strcpy(author ,HistoryStack->top->bookCopy->author);
         strcpy(isbn ,HistoryStack->top->bookCopy->isbn);
-        Book* newBook = addBook(id, title, author, isbn);
+        Book* newBook = (Book*)malloc(sizeof(Book));
+        newBook = addBook(id, title, author, isbn);
         bookRoot = insertBook(bookRoot, newBook);
         printf("Action undone successfully");
     }
@@ -2184,6 +2208,7 @@ int choice;
 initStacks();
 
 do{
+    printf("\e[1;1H\e[2J");
 printf("=== Library Management System === ");
 printf("\n1. Manage Books \n");
 printf("2. Manage Users/Students\n");
